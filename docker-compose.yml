@@ -60,7 +60,7 @@ services:
 
   # <Proxy> reverse proxy for internal services map
   proxy:
-    build: web
+    build: proxy
     restart: always
     ports:
       - 80:80

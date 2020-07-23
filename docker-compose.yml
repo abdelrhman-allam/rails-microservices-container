@@ -1,0 +1,79 @@
+version: "3.7"
+services:
+  # <DBs>
+  db:
+    image: mysql:8.0.19
+    command: '--default-authentication-plugin=mysql_native_password'
+    restart: always
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - backend-network
+    environment:
+      - MYSQL_DATABASE=dev_db
+      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
+  redis:
+    image: "redis:4.0-alpine"
+    command: redis-server
+    volumes:
+        - "redis:/data"
+    
+  # </DBs>
+
+  ## s<ervices>
+  app:
+    build: ./services/users
+    restart: always
+    secrets:
+      - db-password
+    environment:
+      DB_USERNAME: root
+      DB_PASSWORD: secret
+      DB_DATABASE: dev_db
+      DB_PORT: 3306
+      DB_HOST: db
+      RAILS_ENV: development
+      RAILS_MAX_THREADS: 5
+    volumes:
+      - ".:/app"
+      - "./docker/database.yml:/app/config/database.yml"
+    command: sh -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    networks:
+      - backend-network
+      - frontend-network
+  ## </services>
+
+
+  # Sideqik
+  sidekiq:
+    depends_on:
+      - "db"
+      - "redis"
+    build: .
+    command: sidekiq -C config/sidekiq.yml
+    volumes:
+      - ".:/app"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+
+  # <Proxy> reverse proxy for internal services map
+  proxy:
+    build: web
+    restart: always
+    ports:
+      - 80:80
+    networks:
+      - frontend-network
+    # </Proxy>
+
+volumes:
+  db-data:
+  redis:
+secrets:
+  db-password:
+    file: db/password.txt
+networks:
+  backend-network:
+  frontend-network:

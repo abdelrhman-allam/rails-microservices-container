@@ -11,15 +11,9 @@ services:
       - db-data:/var/lib/mysql
     networks:
       - backend-network
-    environment:
-      - MYSQL_DATABASE=dev_db
-      - MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db-password
-  redis:
-    image: "redis:4.0-alpine"
-    command: redis-server
-    volumes:
-        - "redis:/data"
-    
+    env_file: 
+      - './users/.env' 
+      
   # </DBs>
 
   ## s<ervices>
@@ -28,14 +22,8 @@ services:
     restart: always
     secrets:
       - db-password
-    environment:
-      DB_USERNAME: root
-      DB_PASSWORD: secret
-      DB_DATABASE: dev_db
-      DB_PORT: 3306
-      DB_HOST: db
-      RAILS_ENV: development
-      RAILS_MAX_THREADS: 5
+    env_file: 
+      - './services/users/.env'
     volumes:
       - ".:/app"
       - "./docker/database.yml:/app/config/database.yml"
@@ -47,16 +35,16 @@ services:
 
 
   # Sideqik
-  sidekiq:
-    depends_on:
-      - "db"
-      - "redis"
-    build: .
-    command: sidekiq -C config/sidekiq.yml
-    volumes:
-      - ".:/app"
-    environment:
-      REDIS_URL: redis://redis:6379/0
+  # sidekiq:
+  #   depends_on:
+  #     - 'db'
+  #     - 'redis'
+  #   build: ./services/users
+  #   command: sidekiq -C config/sidekiq.yml.erb
+  #   volumes:
+  #     - '.:/app'
+    # env_file:
+    #   - '.env'
 
   # <Proxy> reverse proxy for internal services map
   proxy:

@@ -1,4 +1,4 @@
-# README Sample for Microservices Rails skelton 
+# Sample for Microservices Rails skelton 
 ## Structure consists 
 * db (MySQL 8.0, MongoDB)
 * Getaway (Apollo NodeJS)
